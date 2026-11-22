@@ -10,7 +10,7 @@
 
   <title>馬尼拉 Manila — 線上多人桌遊</title>
   <!-- 版本號碼（民國年月日_時分）：每次修改只需更新這一行，首頁與標題列會自動顯示 -->
-  <meta name="app-version" content="1151122_2307">
+  <meta name="app-version" content="1151123_0013">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
@@ -358,12 +358,14 @@
             <span id="bgmPlayLabel">音樂</span>
           </button>
           <select id="bgmTrackSelect" aria-label="選擇 8-bit 背景純音樂" class="min-w-0 flex-1 sm:flex-initial bg-slate-800 border border-slate-600 text-amber-200 text-[11px] sm:text-xs font-bold rounded-lg px-2 py-1 sm:py-1.5 outline-none cursor-pointer truncate">
-            <option value="0">1. ⚓ 港口歡樂 (1:00)</option>
-            <option value="1">2. 🌊 海浪寧靜 (1:00)</option>
-            <option value="2">3. ⚔️ 遇敵戰鬥 (1:00)</option>
-            <option value="3">4. 🌙 夜晚航行 (1:00)</option>
-            <option value="4">5. 🌴 神廟叢林 (1:00)</option>
-            <option value="5">6. ⛵ 馬尼拉大帆船 (1:00)</option>
+            <option value="0">1. ⚓ 港口歡樂 (2:30)</option>
+            <option value="1">2. 🌊 海浪寧靜 (2:32)</option>
+            <option value="2">3. ⚔️ 遇敵戰鬥 (2:30)</option>
+            <option value="3">4. 🌙 夜晚航行 (2:30)</option>
+            <option value="4">5. 🌴 神廟叢林 (2:30)</option>
+            <option value="5">6. ⛵ 馬尼拉大帆船 (2:30)
+            </option>
+            <option value="6">7. ☕ 午後咖啡館 (2:30)</option>
           </select>
           <button id="bgmModeBtn" type="button" class="shrink-0 text-[11px] sm:text-xs font-bold px-1.5 py-1 rounded-lg bg-slate-800 border border-slate-600 text-amber-200 hover:bg-slate-700" title="播放模式：依序播放／單曲循環／隨機播放">➡️<span class="hidden sm:inline"> 依序</span></button>
         </div>
@@ -371,7 +373,7 @@
           <div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
             <div id="bgmProgressBar" class="h-full bg-gradient-to-r from-amber-400 to-teal-400 w-0 transition-all duration-200"></div>
           </div>
-          <span id="bgmTimeLabel" class="font-mono text-[10px] text-slate-300">00:00/01:00</span>
+          <span id="bgmTimeLabel" class="font-mono text-[10px] text-slate-300">00:00/02:30</span>
         </div>
         <div class="flex items-center gap-1 shrink-0">
           <button id="bgmMuteBtn" type="button" class="text-slate-300 hover:text-white text-xs p-1" title="靜音開關">🔊</button>
@@ -6914,6 +6916,165 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
         }
       ];
 
+      // ===== 曲長延伸：每首 1 分鐘原曲＋1 分 30 秒新段落 ≈ 2 分 30 秒 =====
+      // 新段落依原曲風格自動編曲：B 轉調發展段（原旋律＋回音對位＋樂句尾過門）→ C 間奏（只留低音、伴奏、輕鼓，最後一小節漸強鼓滾）→ D 再現段（原曲高潮＋八度重疊加厚）
+      function trNote(name, semis) {
+        if (!name || name === 'R' || !semis) return name;
+        const f = NOTE_FREQ[name];
+        if (!f) return name;
+        const key = name + '~' + semis;
+        if (!NOTE_FREQ[key]) NOTE_FREQ[key] = f * Math.pow(2, semis / 12);
+        return key;
+      }
+      function trData(d, semis) {
+        const o = Object.assign({}, d);
+        ['lead', 'harp', 'bass', 'bell', 'pluck', 'lead2'].forEach((k) => { if (o[k] && o[k] !== 'R') o[k] = trNote(o[k], semis); });
+        if (o.chord) o.chord = o.chord.map((n) => trNote(n, semis));
+        if (o.lead && NOTE_FREQ[o.lead] > 1250) o.lead = trNote(o.lead, -12);
+        return o;
+      }
+      const EXTEND = [
+        { bars: 80, B: 24, C: 8, D: 16, semis: 5 },   // 1 港口歡樂：轉到下屬調，更明亮
+        { bars: 48, B: 16, C: 5, D: 8, semis: 2 },    // 2 海浪寧靜：升全音，像海面泛起微光
+        { bars: 70, B: 20, C: 6, D: 16, semis: 3 },   // 3 遇敵戰鬥：升小三度，緊張度提高
+        { bars: 40, B: 12, C: 4, D: 8, semis: 5 },    // 4 夜晚航行
+        { bars: 60, B: 16, C: 6, D: 14, semis: 2 },   // 5 神廟叢林
+        { bars: 80, B: 24, C: 8, D: 16, semis: 5 }    // 6 馬尼拉大帆船
+      ];
+      TRACKS.forEach((t, i) => {
+        const cfg = EXTEND[i];
+        if (!cfg) return;
+        const orig = t.getStepData.bind(t);
+        const N = t.totalSteps, OB = N / 16;
+        t.totalSteps = cfg.bars * 16;
+        t.getStepData = (step) => {
+          if (step < N) return orig(step);
+          let bar = Math.floor((step - N) / 16);
+          const s = (step - N) % 16;
+          if (bar < cfg.B) {
+            const src = (bar % OB) * 16 + s;
+            const d = trData(orig(src), cfg.semis);
+            // 每隔一個 4 小節樂句：旋律晚 3 步、低八度的回音對位
+            if (Math.floor(bar / 4) % 2 === 1 && (!d.harp || d.harp === 'R')) {
+              const e = orig(((bar % OB) * 16 + s - 3 + N) % N);
+              if (e.lead && e.lead !== 'R') { d.harp = trNote(trNote(e.lead, cfg.semis), -12); d.harpVol = 0.085; }
+            }
+            if (bar % 4 === 3 && s >= 12) d.drum = s === 15 ? 'T' : 'S';   // 樂句尾過門
+            if (bar === 0 && s === 0) d.drum2 = 'WAVE';
+            return d;
+          }
+          bar -= cfg.B;
+          if (bar < cfg.C) {
+            const d = orig((bar % OB) * 16 + s);
+            const o = { bass: d.bass, bassLen: d.bassLen, bassSustain: d.bassSustain, harp: d.harp, pluck: d.pluck, pluckVol: d.pluckVol, chord: d.chord, chordLen: d.chordLen, chordVol: d.chordVol, fx: d.fx, drum: 'R', drum2: 'R' };
+            if (s === 0) o.drum = 'K'; else if (s % 4 === 2) o.drum = 'H';
+            if (bar === cfg.C - 1 && s >= 8) o.drum = (s >= 12 || s % 2 === 0) ? 'S' : 'R';   // 漸強鼓滾，接回高潮
+            if (bar === 0 && s === 0) o.drum2 = 'WAVE';
+            return o;
+          }
+          bar -= cfg.C;
+          const d = Object.assign({}, orig((((OB - cfg.D + bar) % OB) + OB) % OB * 16 + s));
+          if (d.lead && d.lead !== 'R' && !d.lead2) d.lead2 = d.lead;            // 再現段：八度重疊
+          return d;
+        };
+      });
+      // 每首曲長（秒）＝總步數 × 每步長度
+      function trackSeconds(t) { return t.totalSteps * 15 / t.bpm; }
+
+      // ===== 第 7 首：午後咖啡館（Lo-fi Chill，80 BPM、搖擺節奏、約 2:30）=====
+      // 和弦（爵士九和弦、十三和弦）＋走路低音＋慵懶鼓組＋黑膠雜訊；8-bit／樂器兩種音色
+      const CAFE_CH = {
+        Dm9:   { b: 'D2', f: 'A2', v: ['F3', 'A3', 'C4', 'E4'] },
+        G13:   { b: 'G2', f: 'D3', v: ['F3', 'A3', 'B3', 'E4'] },
+        Cmaj9: { b: 'C3', f: 'G2', v: ['E3', 'G3', 'B3', 'D4'] },
+        Am9:   { b: 'A2', f: 'E2', v: ['G3', 'B3', 'C4', 'E4'] },
+        Fmaj9: { b: 'F2', f: 'C3', v: ['A3', 'C4', 'E4', 'G4'] },
+        Fm9:   { b: 'F2', f: 'C3', v: ['Ab3', 'C4', 'Eb4', 'G4'] },
+        Em7:   { b: 'E2', f: 'B2', v: ['G3', 'B3', 'D4', 'E4'] },
+        A7b9:  { b: 'A2', f: 'E2', v: ['G3', 'Bb3', 'Db4', 'E4'] }
+      };
+      const CAFE_A = ['Dm9', 'G13', 'Cmaj9', 'Am9'];
+      const CAFE_B = ['Fmaj9', 'Fm9', 'Em7', 'A7b9', 'Dm9', 'G13', 'Cmaj9', 'Cmaj9'];
+      const CAFE_PROG = [].concat(
+        ['Cmaj9', 'Am9'],                                   // 前奏 2 小節
+        CAFE_A, CAFE_A, CAFE_A, CAFE_A,                     // A 段 16 小節
+        CAFE_B, CAFE_B,                                     // B 段 16 小節
+        CAFE_A, CAFE_A, CAFE_A,                             // A' 段 12 小節
+        ['Dm9', 'G13', 'Cmaj9', 'Cmaj9']                    // 尾奏 4 小節
+      );
+      const CAFE_MEL_A = [   // A 段第 5～16 小節的旋律（前 4 小節只有節奏組）
+        'A4 . . . C5 . . . . . D5 . E5 . . .', 'D5 . . . . . . . B4 . . . G4 . . .',
+        'E5 . . . . . G5 . . . E5 . D5 . . .', 'C5 . . . . . . . . . . . . . . .',
+        'F5 . . . E5 . . . D5 . . . C5 . A4 .', 'B4 . . . . . D5 . . . . . F5 . . .',
+        'E5 . . . . . . . G5 . . . . . A5 .', 'G5 . . . E5 . . . . . . . . . . .',
+        'A5 . . . G5 . F5 . E5 . . . D5 . . .', 'D5 . . . . . . . . . . . . . B4 .',
+        'C5 . . . . . . . E5 . . . G5 . . .', 'A4 . . . . . . . . . . . . . . .'
+      ].map(chipRow);
+      const CAFE_MEL_B = [
+        'C6 . . . A5 . . . G5 . . . E5 . . .', 'Ab5 . . . . . G5 . . . F5 . Eb5 . . .',
+        'D5 . . . E5 . . . G5 . . . B5 . . .', 'A5 . . . G5 . . . E5 . . . Db5 . . .',
+        'D5 . . . F5 . . . A5 . . . C6 . . .', 'B5 . . . A5 . . . G5 . . . F5 . . .',
+        'E5 . . . . . . . . . . . D5 . . .', 'E5 . . . . . . . . . . . . . . .',
+        'A5 . . . . . C6 . . . A5 . G5 . . .', 'Ab5 . . . . . . . Eb5 . . . C5 . . .',
+        'B4 . . . D5 . . . E5 . . . G5 . . .', 'Db5 . . . E5 . . . G5 . . . A5 . . .',
+        'C6 . . . A5 . . . F5 . . . D5 . . .', 'E5 . . . F5 . . . D5 . . . B4 . . .',
+        'C5 . . . . . . . . . . . . . . .', '. . . . . . . . . . . . G4 . A4 .'
+      ].map(chipRow);
+      function cafeMelodyAt(bar, s) {
+        let rows = null, r = -1;
+        if (bar >= 6 && bar < 18) { rows = CAFE_MEL_A; r = bar - 6; }
+        else if (bar >= 18 && bar < 34) { rows = CAFE_MEL_B; r = bar - 18; }
+        else if (bar >= 34 && bar < 46) { rows = CAFE_MEL_A; r = bar - 34; }
+        if (!rows) return null;
+        const n = rows[r][s];
+        if (n === 'R') return null;
+        // 音長＝到下一個音為止（最長 8 步）
+        let len = 1;
+        while (len < 8) {
+          const k = s + len, rr = r + Math.floor(k / 16), ss = k % 16;
+          if (rr >= rows.length || rows[rr][ss] !== 'R') break;
+          len++;
+        }
+        return { note: n, len };
+      }
+      function cafeStep(step) {
+        const bar = Math.floor(step / 16), s = step % 16;
+        const name = CAFE_PROG[bar], ch = CAFE_CH[name];
+        const nextCh = CAFE_CH[CAFE_PROG[(bar + 1) % CAFE_PROG.length]];
+        const out = { drum: 'R', drum2: 'R', fx: 'VIN' };
+        const intro = bar < 2, outro = bar >= 46, last = bar === 49;
+        // 電鋼琴和弦：第 1 拍長音＋第 2 拍後半短切（搖擺）
+        const comp = (bar % 2 === 0) ? { 0: 6, 6: 2 } : { 0: 5, 10: 2, 14: 2 };
+        if (comp[s] !== undefined) { out.chord = ch.v; out.chordLen = last ? 14 : comp[s]; out.chordVol = s === 0 ? 0.055 : 0.04; }
+        if (last && s !== 0) delete out.chord;
+        // 走路低音
+        if (!intro && !last) {
+          if (s === 0) { out.bass = ch.b; out.bassLen = 6; }
+          else if (s === 8) { out.bass = ch.f; out.bassLen = 3.5; }
+          else if (s === 12) { out.bass = cafeApproach(nextCh.b); out.bassLen = 3; }
+        } else if (last && s === 0) { out.bass = ch.b; out.bassLen = 14; out.bassSustain = true; }
+        // 鼓：大鼓慵懶後拍、軍鼓輕擊 2、4 拍、搖擺腳踏鈸
+        if (!intro && !last) {
+          if (s === 0 || s === 10) out.drum = 'K';
+          else if (s === 4 || s === 12) out.drum = 'S';
+          else if (s % 2 === 0) out.drum = 'H';
+          if (outro && s % 4 === 2) out.drum = 'R';
+        }
+        // 旋律（樂器：長笛；8-bit：柔和三角波）
+        const m = cafeMelodyAt(bar, s);
+        if (m) { out.lead = m.note; out.leadLen = m.len * 0.95; out.leadWave = 'triangle'; out.leadVol = 0.16; out.leadSustain = m.len >= 6; }
+        // B 段後半與 A' 段：吉他（撥弦）在小節尾巴補上分解和弦
+        if (((bar >= 26 && bar < 34) || (bar >= 34 && bar < 46 && bar % 2 === 1)) && (s === 13 || s === 15)) {
+          out.harp = cafeUp(ch.v[s === 13 ? 2 : 3]); out.harpVol = 0.09;
+        }
+        return out;
+      }
+      function cafeApproach(root) { return trNote(root, -1); }   // 半音經過音進入下一小節根音
+      function cafeUp(n) { return trNote(n, 12); }
+
+      // 第 7 首不套用延伸（本身就寫滿 50 小節 ≈ 2:30）
+      TRACKS.push({ name: '午後咖啡館', bpm: 80, totalSteps: 800, swing: 0.3, getStepData(step) { return cafeStep(step); } });
+
       function ensureAudioContext() {
         if (!audioCtx) {
           const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -7385,7 +7546,9 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
         { lead: 'flute', harp: 'harp', bass: 'softbass', lead2: 'flute', trim: 0.42 },          // 2 海浪寧靜：長笛＋豎琴
         { lead: 'brass', harp: 'strings', bass: 'synthbass', lead2: 'brass', trim: 0.42 },      // 3 遇敵戰鬥：銅管＋弦樂
         { lead: 'epiano', harp: 'harp', bass: 'softbass', lead2: 'flute', trim: 0.68 },         // 4 夜晚航行：電鋼琴＋豎琴
-        { lead: 'panflute', harp: 'marimba', bass: 'upright', lead2: 'panflute', trim: 1.05 }   // 5 神廟叢林：排笛＋馬林巴
+        { lead: 'panflute', harp: 'marimba', bass: 'upright', lead2: 'panflute', trim: 1.05 },  // 5 神廟叢林：排笛＋馬林巴
+        null,                                                                                     // 6 馬尼拉大帆船：本身即為銅鑼／吉他音色
+        { lead: 'flute', harp: 'guitar', bass: 'upright', chord: 'epiano', lead2: 'flute', trim: 0.8 } // 7 午後咖啡館：電鋼琴和弦＋長笛＋爵士吉他＋低音提琴
       ];
       function voiceFor(part) {
         if (!instOn) return null;
@@ -7399,6 +7562,20 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
         else triggerChipNote(freq, time, dur, wave, vol, sustain);
       }
 
+      // 黑膠唱片雜訊：每步隨機 0～2 個極短的高頻小爆音（Lo-fi 氛圍）
+      function triggerVinyl(time, dur) {
+        if (!audioCtx || !masterGain || !noiseBuffer) return;
+        const n = Math.random() < 0.55 ? 1 : (Math.random() < 0.3 ? 2 : 0);
+        for (let i = 0; i < n; i++) {
+          const t = time + Math.random() * dur;
+          const src = audioCtx.createBufferSource(); src.buffer = noiseBuffer;
+          const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2500 + Math.random() * 3000;
+          const g = audioCtx.createGain(); const v = 0.012 + Math.random() * 0.03;
+          g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.006 + Math.random() * 0.01);
+          src.connect(hp); hp.connect(g); g.connect(masterGain); src.start(t, Math.random() * 1.5); src.stop(t + 0.03);
+        }
+      }
+
       function scheduleSteps() {
         if (!isPlaying || !audioCtx) return;
         const track = TRACKS[currentTrack];
@@ -7406,45 +7583,54 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
 
         while (nextStepTime < audioCtx.currentTime + 0.18) {
           const data = applyMood(track.getStepData(stepIndex), stepIndex);
-          if (data.bell) triggerBell(NOTE_FREQ[data.bell], nextStepTime, data.bellVol || 0.18);
-          if (data.pluck) triggerPluck(NOTE_FREQ[data.pluck], nextStepTime, data.pluckVol || 0.16);
+          // 搖擺：每拍第 2 個十六分音符往後推（爵士／Lo-fi 的慵懶感）
+          const swingOff = (track.swing && stepIndex % 4 === 2) ? stepDur * track.swing : 0;
+          const t0 = nextStepTime + swingOff;
+          if (data.chord) data.chord.forEach((n) => playPart('chord', NOTE_FREQ[n], t0, stepDur * (data.chordLen || 4), 'triangle', data.chordVol || 0.05, (data.chordLen || 4) >= 6));
+          if (data.fx === 'VIN') triggerVinyl(t0, stepDur);
+          if (data.bell) triggerBell(NOTE_FREQ[data.bell], t0, data.bellVol || 0.18);
+          if (data.pluck) triggerPluck(NOTE_FREQ[data.pluck], t0, data.pluckVol || 0.16);
           if (data.lead2 && NOTE_FREQ[data.lead2]) {
-            playPart('lead2', NOTE_FREQ[data.lead2] * 2, nextStepTime, stepDur * (data.leadLen || 1.45), 'square', 0.045, false);
+            playPart('lead2', NOTE_FREQ[data.lead2] * 2, t0, stepDur * (data.leadLen || 1.45), 'square', 0.045, false);
           }
           if (data.tenseBass && data.bass && data.bass !== 'R') {
-            triggerChipNote(NOTE_FREQ[data.bass] / 2 || 0, nextStepTime, stepDur * 1.2, 'sine', 0.22);
+            triggerChipNote(NOTE_FREQ[data.bass] / 2 || 0, t0, stepDur * 1.2, 'sine', 0.22);
           }
           if (data.lead && data.lead !== 'R') {
-            playPart('lead', NOTE_FREQ[data.lead], nextStepTime, stepDur * (data.leadLen || 1.45), data.leadWave || 'square', data.leadVol || 0.20, !!data.leadSustain);
+            playPart('lead', NOTE_FREQ[data.lead], t0, stepDur * (data.leadLen || 1.45), data.leadWave || 'square', data.leadVol || 0.20, !!data.leadSustain);
           }
           if (data.harp && data.harp !== 'R') {
-            playPart('harp', NOTE_FREQ[data.harp], nextStepTime, stepDur * 1.6, 'triangle', 0.14, false);
+            playPart('harp', NOTE_FREQ[data.harp], t0, stepDur * 1.6, 'triangle', data.harpVol || 0.14, false);
           }
           if (data.bass && data.bass !== 'R') {
-            playPart('bass', NOTE_FREQ[data.bass], nextStepTime, stepDur * (data.bassLen || 1.3), 'triangle', 0.26, !!data.bassSustain);
+            playPart('bass', NOTE_FREQ[data.bass], t0, stepDur * (data.bassLen || 1.3), 'triangle', 0.26, !!data.bassSustain);
           }
           if (data.drum && data.drum !== 'R') {
-            triggerDrumOrWave(data.drum, nextStepTime);
+            triggerDrumOrWave(data.drum, t0);
           }
           if (data.drum2 && data.drum2 !== 'R') {
-            triggerDrumOrWave(data.drum2, nextStepTime);
+            triggerDrumOrWave(data.drum2, t0);
           }
 
           nextStepTime += stepDur;
           stepIndex = (stepIndex + 1) % track.totalSteps;
-          // 一首播完：依播放模式換下一首（單曲循環則繼續同一首）
-          if (stepIndex === 0 && playMode !== 'one' && TRACKS.length > 1) {
-            let nt = currentTrack;
-            if (playMode === 'shuffle') { while (nt === currentTrack) nt = Math.floor(Math.random() * TRACKS.length); }
-            else nt = (currentTrack + 1) % TRACKS.length;
-            currentTrack = nt;
+          // 一首播完：先留約 2.5 秒空白，再依播放模式換下一首（單曲循環則重播同一首）
+          if (stepIndex === 0) {
+            nextStepTime += TRACK_GAP_SEC;
             trackStartTime = nextStepTime;
-            if (trackSelect) trackSelect.value = String(nt);
-            return; // 下一次排程用新曲的速度
+            if (playMode !== 'one' && TRACKS.length > 1) {
+              let nt = currentTrack;
+              if (playMode === 'shuffle') { while (nt === currentTrack) nt = Math.floor(Math.random() * TRACKS.length); }
+              else nt = (currentTrack + 1) % TRACKS.length;
+              currentTrack = nt;
+              if (trackSelect) trackSelect.value = String(nt);
+            }
+            return; // 空白結束後，下一次排程用（新）曲的速度開始
           }
         }
       }
 
+      const TRACK_GAP_SEC = 2.5;   // 每首之間的空白秒數（依序、單曲循環、隨機都適用）
       // 播放模式：seq 依序（預設）／one 單曲循環／shuffle 隨機
       const PLAY_MODES = { seq: { icon: '➡️', label: '依序' }, one: { icon: '🔂', label: '單曲' }, shuffle: { icon: '🔀', label: '隨機' } };
       let playMode = 'seq';
@@ -7467,13 +7653,14 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
 
       function updateProgressUi() {
         if (!isPlaying || !audioCtx) return;
-        const elapsed = Math.max(0, audioCtx.currentTime - trackStartTime) % 60;
-        const sec = Math.floor(elapsed);
+        const total = trackSeconds(TRACKS[currentTrack]);
+        const elapsed = Math.max(0, audioCtx.currentTime - trackStartTime) % total;
+        const fmt = (x) => `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(Math.floor(x % 60)).padStart(2, '0')}`;
         if (timeLabel) {
-          timeLabel.textContent = `00:${String(sec).padStart(2, '0')}/01:00`;
+          timeLabel.textContent = `${fmt(elapsed)}/${fmt(total)}`;
         }
         if (progressBar) {
-          progressBar.style.width = `${((elapsed / 60) * 100).toFixed(1)}%`;
+          progressBar.style.width = `${((elapsed / total) * 100).toFixed(1)}%`;
         }
         uiRafId = requestAnimationFrame(updateProgressUi);
       }
@@ -7513,7 +7700,7 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
           nextStepTime = audioCtx.currentTime + 0.04;
         }
         if (progressBar) progressBar.style.width = '0%';
-        if (timeLabel) timeLabel.textContent = '00:00/01:00';
+        if (timeLabel) timeLabel.textContent = '00:00/02:30';
         if (!isPlaying) startBgm();
         showToast(`🎵 已切換至第 ${currentTrack + 1} 首：${TRACKS[currentTrack].name}`, 2200);
       });
