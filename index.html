@@ -10,7 +10,7 @@
 
   <title>馬尼拉 Manila — 線上多人桌遊</title>
   <!-- 版本號碼（民國年月日_時分）：每次修改只需更新這一行，首頁與標題列會自動顯示 -->
-  <meta name="app-version" content="1151122_2150">
+  <meta name="app-version" content="1151122_2307">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
@@ -7712,14 +7712,15 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
     let fx2dWasActive = false;
 
     function is3DBoard() { return !!(board3d && board3d.active); }
-    let view3dTouchLocked = (() => { try { return localStorage.getItem('manila_3d_touch_lock') !== '0'; } catch (_) { return true; } })();
+    // 手機 3D 觸控：預設「解鎖」（單指旋轉）；改用新存檔鍵，讓之前記成鎖定的裝置也回到預設解鎖
+    let view3dTouchLocked = (() => { try { return localStorage.getItem('manila_3d_touch_lock_v2') === '1'; } catch (_) { return false; } })();
     const IS_COARSE_POINTER = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     function updateTouchLockBtn() {
       const b = document.getElementById('view3dLockBtn');
       if (!b) return;
       b.classList.toggle('hidden', !(boardMode === '3d' && IS_COARSE_POINTER));
       b.textContent = view3dTouchLocked ? '🔒' : '🔓';
-      b.title = view3dTouchLocked ? '視角已鎖定：單指捲動頁面、雙指旋轉縮放（點擊解鎖）' : '視角已解鎖：單指旋轉（點擊鎖定）';
+      b.title = view3dTouchLocked ? '視角已鎖定：單指上下滑捲動頁面；雙指縮放、移動畫面（點擊解鎖）' : '視角已解鎖：單指拖曳旋轉、連點兩下後拖曳捲動頁面；雙指縮放、移動畫面（點擊鎖定）';
       b.style.background = view3dTouchLocked ? 'transparent' : '#f59e0b';
       b.style.color = view3dTouchLocked ? '#fcd34d' : '#0f172a';
     }
@@ -7741,7 +7742,7 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
       updateBoardModeButtons();
       if (boardMode === '3d') {
         const ok = await enterBoard3D({ silent });
-        if (ok && !silent) showToast(IS_COARSE_POINTER ? (view3dTouchLocked ? '🧊 3D 版圖：雙指旋轉／縮放，單指上下滑捲動頁面；按 🔒 可解鎖單指旋轉' : '🧊 3D 版圖：單指旋轉（要捲動頁面請按 🔓 鎖定）') : '🧊 已切換為 3D 立體版圖：拖曳旋轉、滾輪或雙指縮放、右鍵或雙指拖曳平移', 3800);
+        if (ok && !silent) showToast(IS_COARSE_POINTER ? (view3dTouchLocked ? '🧊 3D 版圖（🔒 鎖定）：單指上下滑捲動頁面；雙指縮放、移動畫面' : '🧊 3D 版圖（🔓 解鎖）：單指拖曳旋轉；連點兩下後拖曳捲動頁面；雙指縮放、移動畫面') : '🧊 已切換為 3D 立體版圖：拖曳旋轉、滾輪或雙指縮放、右鍵或雙指拖曳平移', 3800);
       } else {
         await enterBoard2D();
         if (!silent) showToast('🗺️ 已切換為 2D 平面版圖', 2200);
@@ -7860,15 +7861,107 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
       const controls = new OrbitControls(camera, renderer.domElement);
       // 手機觸控：🔒 鎖定（預設）＝單指上下滑捲動頁面、雙指旋轉／縮放；🔓 解鎖＝單指旋轉、雙指縮放平移。
       // 注意：OrbitControls 建立時會把畫布設成 touch-action:none，必須在建立「之後」覆寫；外層圖層也要一起改，否則仍無法捲動。
+      // ===== 手機觸控（電腦滑鼠操作不變）=====
+      // 🔓 解鎖（預設）：單指拖曳＝旋轉（速度為電腦的一半）；連點兩下後按住拖曳＝上下捲動頁面；雙指＝縮放＋上下左右移動
+      // 🔒 鎖定：單指（點一下或連點兩下後）拖曳＝上下捲動頁面；雙指＝縮放＋上下左右移動
+      // 頁面捲動改由程式處理（含慣性），所以畫布一律 touch-action:none，雙指手勢才不會被瀏覽器搶走。
+      const BASE_ROTATE_SPEED = controls.rotateSpeed || 1;
       function applyTouchLock() {
         const locked = view3dTouchLocked;
         controls.touches = locked
-          ? { ONE: null, TWO: THREE.TOUCH.DOLLY_ROTATE }
+          ? { ONE: null, TWO: THREE.TOUCH.DOLLY_PAN }
           : { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
-        renderer.domElement.style.touchAction = locked ? 'pan-y' : 'none';
-        layer.style.touchAction = locked ? 'pan-y' : 'none';
+        renderer.domElement.style.touchAction = 'none';
+        layer.style.touchAction = 'none';
       }
       applyTouchLock();
+      const touch3d = { active: new Map(), multi: false, scroll: null, blockAll: false, lastTap: { t: 0, x: 0, y: 0 }, inertia: 0 };
+      // 找出實際負責捲動的元素（通常是整個頁面；若介面放在可捲動的容器內則捲該容器）
+      function pageScroller() {
+        let el = layer.parentElement;
+        while (el && el !== document.body) {
+          const cs = getComputedStyle(el);
+          if (/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 2) return el;
+          el = el.parentElement;
+        }
+        return null;
+      }
+      function scrollPageBy(dy) { const sc = pageScroller(); if (sc) sc.scrollTop += dy; else window.scrollBy(0, dy); }
+      function stopInertia() { if (touch3d.inertia) { cancelAnimationFrame(touch3d.inertia); touch3d.inertia = 0; } }
+      function startInertia(v) {
+        stopInertia();
+        let last = performance.now();
+        const step = (now) => {
+          const dt = Math.min(40, now - last); last = now;
+          if (Math.abs(v) < 0.02) { touch3d.inertia = 0; return; }
+          scrollPageBy(v * dt);
+          v *= Math.pow(0.94, dt / 16);
+          touch3d.inertia = requestAnimationFrame(step);
+        };
+        touch3d.inertia = requestAnimationFrame(step);
+      }
+      layer.addEventListener('pointerdown', (e) => {
+        controls.rotateSpeed = e.pointerType === 'touch' ? BASE_ROTATE_SPEED * 0.5 : BASE_ROTATE_SPEED;
+        if (e.pointerType !== 'touch') return;
+        stopInertia();
+        touch3d.active.set(e.pointerId, { x: e.clientX, y: e.clientY, t: performance.now(), moved: false });
+        if (touch3d.active.size >= 2) {
+          touch3d.multi = true;
+          if (touch3d.scroll) touch3d.scroll = null;
+          if (touch3d.blockAll) e.stopPropagation();
+          return;
+        }
+        touch3d.multi = false;
+        touch3d.blockAll = false;
+        const now = performance.now();
+        const lt = touch3d.lastTap;
+        const isSecondTap = now - lt.t < 350 && Math.hypot(e.clientX - lt.x, e.clientY - lt.y) < 45;
+        if (!view3dTouchLocked && isSecondTap) {
+          // 解鎖：連點兩下 → 這一下改成捲動頁面，不旋轉、不點選
+          touch3d.scroll = { id: e.pointerId, lastY: e.clientY, lastT: now, v: 0, blocked: true };
+          touch3d.blockAll = true;
+          touch3d.lastTap.t = 0;
+          e.stopPropagation();
+        } else if (view3dTouchLocked) {
+          // 鎖定：單指一律捲動頁面（輕點仍可點選船位／圓圈）
+          touch3d.scroll = { id: e.pointerId, lastY: e.clientY, lastT: now, v: 0, blocked: false };
+        }
+      }, true);
+      layer.addEventListener('pointermove', (e) => {
+        if (e.pointerType !== 'touch') return;
+        const a = touch3d.active.get(e.pointerId);
+        if (a && Math.hypot(e.clientX - a.x, e.clientY - a.y) > 7) a.moved = true;
+        const sc = touch3d.scroll;
+        if (sc && sc.id === e.pointerId && touch3d.active.size === 1) {
+          const now = performance.now();
+          const dy = sc.lastY - e.clientY;
+          if (dy) scrollPageBy(dy);
+          const dt = Math.max(1, now - sc.lastT);
+          sc.v = sc.v * 0.6 + (dy / dt) * 0.4;
+          sc.lastY = e.clientY; sc.lastT = now;
+        }
+        if (touch3d.blockAll) e.stopPropagation();
+      }, true);
+      const endTouch = (e) => {
+        if (e.pointerType !== 'touch') return;
+        const a = touch3d.active.get(e.pointerId);
+        touch3d.active.delete(e.pointerId);
+        const sc = touch3d.scroll;
+        if (sc && sc.id === e.pointerId) {
+          if (Math.abs(sc.v) > 0.05 && performance.now() - sc.lastT < 120) startInertia(sc.v);
+          touch3d.scroll = null;
+        }
+        // 記錄「單指輕點」作為連點兩下的第一下
+        if (a && !a.moved && !touch3d.multi && e.type === 'pointerup' && performance.now() - a.t < 300) {
+          touch3d.lastTap = { t: performance.now(), x: e.clientX, y: e.clientY };
+        }
+        if (touch3d.blockAll) {
+          e.stopPropagation();
+          if (touch3d.active.size === 0) touch3d.blockAll = false;
+        }
+      };
+      layer.addEventListener('pointerup', endTouch, true);
+      layer.addEventListener('pointercancel', endTouch, true);
       controls.enableDamping = true;
       controls.dampingFactor = 0.09;
       controls.minDistance = 16;
@@ -9303,6 +9396,7 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
         const quick = performance.now() - down.t < 600;
         down = null;
         if (moved > 7 || !quick) return;
+        if (e.pointerType === 'touch' && touch3d.multi) return;   // 雙指縮放／移動時不誤觸點選
         const p = pickAt(e.clientX, e.clientY);
         if (!p) return;
         handlePick(p);
@@ -9830,10 +9924,10 @@ const STOCK_ICON_Y = ${calc.stockIconY};`;
     })();
     document.getElementById('view3dLockBtn')?.addEventListener('click', () => {
       view3dTouchLocked = !view3dTouchLocked;
-      try { localStorage.setItem('manila_3d_touch_lock', view3dTouchLocked ? '1' : '0'); } catch (_) {}
+      try { localStorage.setItem('manila_3d_touch_lock_v2', view3dTouchLocked ? '1' : '0'); } catch (_) {}
       if (board3d && board3d.setTouchLock) board3d.setTouchLock(view3dTouchLocked);
       updateTouchLockBtn();
-      showToast(view3dTouchLocked ? '🔒 視角鎖定：單指上下滑捲動頁面，雙指旋轉／縮放' : '🔓 視角解鎖：單指拖曳旋轉（要捲動頁面請再鎖定）', 3000);
+      showToast(view3dTouchLocked ? '🔒 視角鎖定：單指上下滑＝捲動頁面；雙指＝縮放、移動畫面' : '🔓 視角解鎖：單指拖曳＝旋轉；連點兩下後拖曳＝捲動頁面；雙指＝縮放、移動畫面', 3200);
     });
     updateBoardModeButtons();
   </script>
