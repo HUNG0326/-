@@ -10,7 +10,7 @@
 
   <title>馬尼拉 Manila — 線上多人桌遊</title>
   <!-- 版本號碼（民國年月日_時分）：每次修改只需更新這一行，首頁與標題列會自動顯示 -->
-  <meta name="app-version" content="1151123_0013">
+  <meta name="app-version" content="1151123_2125">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
@@ -324,16 +324,16 @@
     <!-- 手機版「⚙️ 更多」收合面板（點擊才展開，不佔平常棋盤視野） -->
     <div id="mobileMoreDrawer" class="hidden sm:hidden bg-slate-900/95 border border-slate-700/90 rounded-2xl p-2.5 space-y-2 shadow-2xl">
       <div class="grid grid-cols-2 gap-1.5">
-        <button id="focusBtnMobile" data-focus-btn type="button" class="bg-slate-800 active:bg-slate-700 border border-slate-600 text-emerald-200 px-2.5 py-2 rounded-xl text-xs font-bold text-left" title="切換專注模式（淡化背景特效、突出棋盤資訊）">🧘 專注：關</button>
-        <button id="boardPickBtnMobile" data-board-pick-btn type="button" class="bg-slate-800 active:bg-slate-700 border border-amber-500/60 text-amber-200 px-2.5 py-2 rounded-xl text-xs font-bold text-left" title="切換 2D 底圖：現代插畫／復古手繪">🗺️ 底圖：現代插畫</button>
+        <button id="boardPickBtnMobile" data-board-pick-btn type="button" class="bg-slate-800 active:bg-slate-700 border border-amber-500/60 text-amber-200 px-2.5 py-2 rounded-xl text-xs font-bold text-left" title="切換 2D 底圖：現代插畫／復古手繪">🗺️ 底圖(1/2)：現代插畫</button>
         <button id="themeBtnMobile" data-theme-btn type="button" class="bg-slate-800 active:bg-slate-700 border border-slate-600 text-sky-200 px-2.5 py-2 rounded-xl text-xs font-bold text-left" title="切換天氣：晴朗／雷雨／月夜">🌦️ 天氣：晴朗</button>
         <button id="fxBtnMobile" data-fx-btn type="button" class="bg-slate-800 active:bg-slate-700 border border-slate-600 text-cyan-200 px-2.5 py-2 rounded-xl text-xs font-bold text-left" title="切換動態效果：標準／省電／靜態">✨ 動態：標準</button>
-        <button id="calibrateToggleBtnMobile" type="button" class="bg-rose-800/90 active:bg-rose-700 text-white border border-rose-400/50 px-2.5 py-2 rounded-xl text-xs font-black text-left">🎯 32點校正</button>
+        <button id="focusBtnMobile" data-focus-btn type="button" class="bg-slate-800 active:bg-slate-700 border border-slate-600 text-emerald-200 px-2.5 py-2 rounded-xl text-xs font-bold text-left" title="切換專注模式（淡化背景特效、突出棋盤資訊）">🧘 專注：關</button>
         <label class="cursor-pointer bg-slate-800 active:bg-slate-700 border border-slate-600 text-slate-200 px-2.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1" title="載入自訂底圖">
-          <span>🖼️ 自訂底圖/MP4</span>
+          <span>🖼️ 載入自訂底圖</span>
           <input id="customBoardInputMobile" type="file" accept="image/*,video/mp4,video/*,.mp4" class="hidden" />
         </label>
         <button id="resetBoardBtnMobile" type="button" class="bg-slate-800 active:bg-slate-700 border border-slate-600 text-slate-200 px-2.5 py-2 rounded-xl text-xs font-bold text-left" title="清除本機自選底圖，恢復預設底圖">↩️ 恢復預設底圖</button>
+        <button id="calibrateToggleBtnMobile" type="button" class="bg-rose-800/90 active:bg-rose-700 text-white border border-rose-400/50 px-2.5 py-2 rounded-xl text-xs font-black text-left">🎯 32點校正</button>
       </div>
       <!-- 手機版房間內次要操作（加入 AI、房主重開、離開房間） -->
       <div id="mobileDrawerRoomActions" class="hidden pt-1.5 border-t border-slate-800 flex flex-wrap items-center gap-1.5">
@@ -393,12 +393,12 @@
       <div id="videoSettingsBar" class="hidden sm:flex flex-wrap items-center gap-1.5 bg-slate-900/95 border border-sky-500/50 px-2 py-1 rounded-xl shadow-inner">
         <span class="text-[11px] font-black text-sky-300 pr-1.5 mr-0.5 border-r border-slate-700 select-none" title="以下按鈕都是調整版圖畫面用">🖼️ 影像</span>
       <label class="hidden sm:flex cursor-pointer bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-2 py-1 rounded-lg text-xs font-bold transition items-center gap-1" title="載入您的自訂底圖並自動依原圖比例顯示">
-        <span>🖼️ 載入自訂底圖（圖片 / MP4）</span>
+        <span>🖼️ 載入自訂底圖</span>
         <input id="customBoardInput" type="file" accept="image/*,video/mp4,video/*,.mp4" class="hidden" />
         </label>
         <button id="resetBoardBtn" type="button" class="hidden sm:flex bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-2 py-1 rounded-lg text-xs font-bold transition items-center gap-1" title="清除本機自選底圖，恢復預設底圖">↩️ 恢復預設底圖</button>
         <button id="fxBtn" data-fx-btn type="button" class="hidden sm:flex bg-slate-800 hover:bg-slate-700 border border-slate-600 text-cyan-200 px-2 py-1 rounded-lg text-xs font-bold transition items-center gap-1" title="切換動態效果：標準／省電／靜態">✨ 動態：標準</button>
-        <button id="boardPickBtn" data-board-pick-btn type="button" class="hidden sm:flex bg-slate-800 hover:bg-slate-700 border border-amber-500/60 text-amber-200 px-2 py-1 rounded-lg text-xs font-bold transition items-center gap-1" title="切換 2D 底圖：現代插畫／復古手繪">🗺️ 底圖：現代插畫</button>
+        <button id="boardPickBtn" data-board-pick-btn type="button" class="hidden sm:flex bg-slate-800 hover:bg-slate-700 border border-amber-500/60 text-amber-200 px-2 py-1 rounded-lg text-xs font-bold transition items-center gap-1" title="切換 2D 底圖：現代插畫／復古手繪">🗺️ 底圖(1/2)：現代插畫</button>
         <button id="themeBtn" data-theme-btn type="button" class="hidden sm:flex bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-200 px-2 py-1 rounded-lg text-xs font-bold transition items-center gap-1" title="切換天氣：晴朗／雷雨／月夜">🌦️ 天氣：晴朗</button>
         <button id="focusBtn" data-focus-btn type="button" class="hidden sm:flex bg-slate-800 hover:bg-slate-700 border border-slate-600 text-emerald-200 px-2 py-1 rounded-lg text-xs font-bold transition items-center gap-1" title="切換專注模式（淡化背景特效、突出棋盤資訊）">🧘 專注：關</button>
       </div>
@@ -5688,9 +5688,11 @@ window.BoardFX=api;
     function updateFxButtons() {
       const fxApi = boardFxApi();
       const active = !!fxApi;
-      const label = active ? `✨ 動態：${fxApi.profileLabel()}` : '✨ 動態：未啟用';
+      // 標籤顯示「目前第幾種／共幾種」，例如「動態(1/3)：標準」
+      const idxOf = (list, v) => { const i = list.indexOf(v); return i >= 0 ? `(${i + 1}/${list.length})` : ''; };
+      const label = active ? `✨ 動態${idxOf(['標準', '省電', '靜態'], fxApi.profileLabel())}：${fxApi.profileLabel()}` : '✨ 動態：未啟用';
       document.querySelectorAll('[data-fx-btn]').forEach((b) => { b.textContent = label; });
-      const wxLabel = active ? `🌦️ 天氣：${fxApi.themeLabel()}` : '🌦️ 天氣：未啟用';
+      const wxLabel = active ? `🌦️ 天氣${idxOf(['晴朗', '雷雨', '月夜'], fxApi.themeLabel())}：${fxApi.themeLabel()}` : '🌦️ 天氣：未啟用';
       document.querySelectorAll('[data-theme-btn]').forEach((b) => { b.textContent = wxLabel; });
       const focusOn = active && fxApi.isFocusMode();
       const focusLabel = active ? `🧘 專注：${focusOn ? '開' : '關'}` : '🧘 專注：未啟用';
@@ -6003,7 +6005,9 @@ window.BoardFX=api;
       if (roomState) renderAll();
     }
     function updateBoardPickButtons() {
-      const label = '🗺️ 底圖：' + currentBoardLabel();
+      let pos = '';
+      try { const list = BoardFX.boards(); const i = list.findIndex((x) => x.id === currentBoardId()); if (i >= 0) pos = `(${i + 1}/${list.length})`; } catch (_) {}
+      const label = `🗺️ 底圖${pos}：` + currentBoardLabel();
       document.querySelectorAll('[data-board-pick-btn]').forEach((b) => { b.textContent = label; });
     }
     document.querySelectorAll('[data-board-pick-btn]').forEach((b) => b.addEventListener('click', async () => {
